@@ -53,15 +53,15 @@ class MsfAutoload
     [
       "#{__dir__}/msf/core/constants.rb",
       "#{__dir__}/msf/core/cert_provider.rb",
-      "#{__dir__}/msf/core/rpc/json/error.rb",
-      "#{__dir__}/msf/core/rpc/json/v2_0/",
+      "#{__dir__}/msf/core/rpc/json/",
       "#{__dir__}/msf/core/modules/external/ruby/metasploit.rb",
       "#{__dir__}/msf/core/rpc/v10/constants.rb",
       "#{__dir__}/msf/core.rb",
       "#{__dir__}/msf/base.rb",
       "#{__dir__}/rex/post/",
       "#{__dir__}/rex/post.rb",
-      "#{__dir__}/rex/proto/ssh/hrr_rb_ssh.rb"
+      "#{__dir__}/rex/proto/ssh/hrr_rb_ssh.rb",
+      "#{__dir__}/rex/proto/ssh/connection.rb"
     ]
   end
 
@@ -295,7 +295,6 @@ class MsfAutoload
     [
       { path: "#{__dir__}/msf/", namespace: Msf },
       { path: "#{__dir__}/rex/", namespace: Rex },
-      { path: "#{__dir__}/../app/validators/" },
     ]
   end
 
