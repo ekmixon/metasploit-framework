@@ -37,19 +37,19 @@ metadata = {
 
 
 def run(args):
-    module.LogHandler.setup(msg_prefix='{} - '.format(args['rhost']))
+    module.LogHandler.setup(msg_prefix=f"{args['rhost']} - ")
     if dependencies_missing:
         logging.error('Module dependency (requests) is missing, cannot continue')
         return
 
     # Your code here
     try:
-        r = requests.get('https://{}/{}'.format(args['rhost'], args['targeturi']), verify=False)
+        r = requests.get(f"https://{args['rhost']}/{args['targeturi']}", verify=False)
     except requests.exceptions.RequestException as e:
-        logging.error('{}'.format(e))
+        logging.error(f'{e}')
         return
 
-    logging.info('{}...'.format(r.text[0:50]))
+    logging.info(f'{r.text[:50]}...')
 
 
 if __name__ == '__main__':

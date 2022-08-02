@@ -167,7 +167,7 @@ def check_user(url, user, password, timeout):
     try:
         r = requests.options(url, headers=headers, auth=auth, timeout=timeout)
     except Exception as e:
-        msg = "error checking {} : {}".format(user, e)
+        msg = f"error checking {user} : {e}"
         if MSF:
             module.log(msg, "error")
         else:
@@ -208,7 +208,7 @@ def check_users(in_q, out_q, url, password, timeout):
                 logging.debug(msg)
             break
         else:
-            msg = "checking: {}".format(user)
+            msg = f"checking: {user}"
             if MSF:
                 module.log(msg, "debug")
             else:
@@ -216,14 +216,14 @@ def check_users(in_q, out_q, url, password, timeout):
             try:
                 result = check_user(url, user, password, timeout)
             except Exception as e:
-                msg = "Error checking {} : {}".format(user, e)
+                msg = f"Error checking {user} : {e}"
                 if MSF:
                     module.log(msg, "error")
                 else:
                     logging.error(msg)
                 in_q.task_done()
                 continue
-            msg = "{}".format(result)
+            msg = f"{result}"
             if MSF:
                 module.log(msg, "debug")
             else:
@@ -239,7 +239,7 @@ def get_users(user_file, in_q, max_threads):
             if SHUTDOWN_EVENT.is_set():
                 break
             user = line.strip()
-            msg = "user = {}".format(user)
+            msg = f"user = {user}"
             if MSF:
                 module.log(msg, "debug")
             else:
@@ -281,10 +281,7 @@ def report(out_q, output_file):
             break
         else:
             user, password, valid, r = result
-            if r is None:
-                code = "???"
-            else:
-                code = r.status_code
+            code = "???" if r is None else r.status_code
             s = symbols.get(valid)
             output = template.format(s=s, code=code, valid=valid, user=user, password=password)
             if MSF:
@@ -306,7 +303,7 @@ def report(out_q, output_file):
                 logging.info(output)
             if output_file:
                 with open(output_file, "a", 1) as f:
-                    f.write("{}\n".format(output))
+                    f.write(f"{output}\n")
             out_q.task_done()
 
 
@@ -318,9 +315,7 @@ def run(args):
         return
     args['TIMEOUT'] = float(args['TIMEOUT'])
     args['THREADS'] = int(args['THREADS'])
-    lower_args = {}
-    for arg in args:
-        lower_args[arg.lower()] = args[arg]
+    lower_args = {arg.lower(): args[arg] for arg in args}
     main(lower_args)
 
 
@@ -362,10 +357,7 @@ def setup_logging(verbose=True, log_file=None):
             console_handler.setLevel(logging.INFO)
         logging.getLogger().addHandler(console_handler)
     else:
-        if verbose:
-            level = logging.DEBUG
-        else:
-            level = logging.INFO
+        level = logging.DEBUG if verbose else logging.INFO
         logging.basicConfig(level=level,
                             format="%(levelname)s: %(module)s: %(message)s")
 
@@ -382,8 +374,7 @@ def main(args):
     threads = []
     meta_threads = []
     max_size = max_threads / 2
-    if max_size < 1:
-        max_size = 1
+    max_size = max(max_size, 1)
     in_q = queue.Queue(maxsize=max_size)
     out_q = queue.Queue(maxsize=max_size)
 
@@ -397,8 +388,12 @@ def main(args):
         meta_threads.append(file_thread)
 
         for num in range(max_threads):
-            t = threading.Thread(name="Thread-worker{}".format(num), target=check_users,
-                                 args=(in_q, out_q, url, password, timeout))
+            t = threading.Thread(
+                name=f"Thread-worker{num}",
+                target=check_users,
+                args=(in_q, out_q, url, password, timeout),
+            )
+
             t.start()
             threads.append(t)
 
@@ -436,13 +431,32 @@ if __name__ == "__main__":
         parser = argparse.ArgumentParser(description="Enumerate Usernames (email addresses) from Office365 ActiveSync")
         parser.add_argument("-u", "--users", help="Potential usernames file, one username per line", required=True)
         parser.add_argument("-o", "--output", help="Output file (will be appended to)", required=True)
-        parser.add_argument("--password", default=default_password,
-                            help="Password to use during enumeration. Default: {}".format(default_password))
-        parser.add_argument("--url", help="ActiveSync URL. Default: {}".format(default_url), default=default_url)
-        parser.add_argument("--threads", help="Maximum threads. Default: {}".format(default_max_threads),
-                            default=default_max_threads, type=int)
-        parser.add_argument("--timeout", help="HTTP Timeout. Default: {}".format(default_timeout),
-                            default=default_timeout, type=float)
+        parser.add_argument(
+            "--password",
+            default=default_password,
+            help=f"Password to use during enumeration. Default: {default_password}",
+        )
+
+        parser.add_argument(
+            "--url",
+            help=f"ActiveSync URL. Default: {default_url}",
+            default=default_url,
+        )
+
+        parser.add_argument(
+            "--threads",
+            help=f"Maximum threads. Default: {default_max_threads}",
+            default=default_max_threads,
+            type=int,
+        )
+
+        parser.add_argument(
+            "--timeout",
+            help=f"HTTP Timeout. Default: {default_timeout}",
+            default=default_timeout,
+            type=float,
+        )
+
         parser.add_argument("-v", "--verbose", help="Debug logging", action="store_true")
         parser.add_argument("--logfile", help="Log File", default=None)
 

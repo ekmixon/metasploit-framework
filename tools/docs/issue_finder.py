@@ -25,7 +25,6 @@ show_all = args.show_all
 show_issues = args.show_issues
 
 modules = []
-docs = []
 path = os.path.abspath(os.path.join(os.path.realpath(__file__),"..","..",".."))
 
 if os.path.exists(os.path.join(path, 'modules', module_type)):
@@ -35,8 +34,7 @@ else:
     print("Path doesn't exist. Maybe you have passed a wrong module category or maybe there isn't any documentation file yet.")
     sys.exit()
 
-for doc in list_docs:
-    docs.append(doc.split('.')[0].replace('/documentation/','/'))
+docs = [doc.split('.')[0].replace('/documentation/','/') for doc in list_docs]
 for module in list_modules:
     # skip compiled python code, and python internal use files
     if module.split('.')[1] == 'pyc': continue
@@ -61,51 +59,50 @@ def print_or_write(line):
 def make_link(line):
     # first we wenat to get the extension back
     for m in list_modules:
-      if "%s." %(line) in m:
-        ext = m
-        break
+        if f"{line}." in m:
+            ext = m
+            break
     link = ext.split("/modules")[1]
     #link = ext.replace("/modules", url_root)
-    return "[%s%s](%s%s)" %(root, line, url_root, link)
+    return f"[{root}{line}]({url_root}{link})"
 
 print_or_write('# Documentation Issue Finder\n')
 print_or_write('Generated: %s\n' %(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
-if not (show_all):
-    if not (show_issues):
-        print_or_write('## Modules Without Documentation\n')
-        for i in sorted(modules):
-            if i not in docs:
-                missings += 1
-                print_or_write('+ [ ] %s' %(make_link(i.split('metasploit-framework')[1])))
-        print_or_write('\n%s modules have no documentation.' %(missings))
-    else:
-        print_or_write('## Docs Without Modules\n')
-        for i in sorted(docs):
-            if i not in modules:
-                problems += 1
-                print_or_write('+ [ ] %s' %(make_link(i.split('metasploit-framework')[1])))
-        print_or_write('\n%s doc files do not correspond to any module.' %(problems))
-else:
+if show_all:
     count = 0
     if not (show_issues):
         print_or_write('## Modules Without Documentation\n')
         for i in sorted(modules):
             if i in docs:
-                print_or_write('+ [x] %s' %(make_link(i.split('metasploit-framework')[1])))
+                print_or_write(f"+ [x] {make_link(i.split('metasploit-framework')[1])}")
             else:
-                print_or_write('+ [ ] %s' %(make_link(i.split('metasploit-framework')[1])))
+                print_or_write(f"+ [ ] {make_link(i.split('metasploit-framework')[1])}")
                 count += 1
         print_or_write('\n%s modules out of %s (%d%%) have no documentation.' %(count, len(modules), float(count)/len(modules) * 100.0))
     else:
         print_or_write('## Docs Without Modules\n')
         for i in sorted(docs):
             if i in modules:
-                print_or_write('+ [x] %s' %(make_link(i.split('metasploit-framework')[1])))
+                print_or_write(f"+ [x] {make_link(i.split('metasploit-framework')[1])}")
             else:
-                print_or_write('+ [ ] %s' %(make_link(i.split('metasploit-framework')[1])))
+                print_or_write(f"+ [ ] {make_link(i.split('metasploit-framework')[1])}")
                 count += 1
         print_or_write('\n%s doc files out of %s do not correspond to any module.' %(count, len(docs)))
 
+elif not (show_issues):
+    print_or_write('## Modules Without Documentation\n')
+    for i in sorted(modules):
+        if i not in docs:
+            missings += 1
+            print_or_write(f"+ [ ] {make_link(i.split('metasploit-framework')[1])}")
+    print_or_write('\n%s modules have no documentation.' %(missings))
+else:
+    print_or_write('## Docs Without Modules\n')
+    for i in sorted(docs):
+        if i not in modules:
+            problems += 1
+            print_or_write(f"+ [ ] {make_link(i.split('metasploit-framework')[1])}")
+    print_or_write('\n%s doc files do not correspond to any module.' %(problems))
 if args.output:
   o.close()

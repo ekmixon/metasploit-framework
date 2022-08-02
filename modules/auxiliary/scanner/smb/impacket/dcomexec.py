@@ -154,7 +154,7 @@ class DCOMEXEC:
                 resp = iMMC.Invoke(resp[0], 0x409, DISPATCH_PROPERTYGET, dispParams, 0, [], [])
                 pQuit = iMMC.GetIDsOfNames(('Quit',))[0]
             else:
-                logging.fatal('Invalid object %s' % self.__dcomObject)
+                logging.fatal(f'Invalid object {self.__dcomObject}')
                 return
 
             iDocument = IDispatch(self.getInterface(iMMC, resp['pVarResult']['_varUnion']['pdispVal']['abData']))
@@ -204,7 +204,7 @@ class RemoteShell(_msf_impacket.RemoteShell):
         return True
 
     def execute_remote(self, data):
-        command = '/Q /c ' + data
+        command = f'/Q /c {data}'
         if self._noOutput is False:
             command += ' 1> ' + '\\\\127.0.0.1\\%s' % self._share + self._output + ' 2>&1'
 
@@ -254,7 +254,7 @@ class RemoteShell(_msf_impacket.RemoteShell):
 
 class RemoteShellMMC20(RemoteShell):
     def execute_remote(self, data):
-        command = '/Q /c ' + data
+        command = f'/Q /c {data}'
         if self._noOutput is False:
             command += ' 1> ' + '\\\\127.0.0.1\\%s' % self._share + self._output  + ' 2>&1'
 

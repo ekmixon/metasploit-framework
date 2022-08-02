@@ -66,7 +66,7 @@ def run(args):
 
     # Define UdaExec ODBC connection "application" globally, must be before LogHandler
     udaExec = teradata.UdaExec(appName="Auth", version="1.0", logConsole=False, configureLogging=False)
-    module.LogHandler.setup(msg_prefix='{}:{} - '.format(args['rhost'], 1025))
+    module.LogHandler.setup(msg_prefix=f"{args['rhost']}:1025 - ")
     scanner = login_scanner.make_scanner(lambda host, port, username, password: valid_login(udaExec, host, username, password))
     scanner(args)
 

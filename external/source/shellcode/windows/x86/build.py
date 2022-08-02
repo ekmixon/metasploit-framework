@@ -33,12 +33,10 @@ def locate(src_file, dir='./src/'):
     return None
 
 def build(name):
-    location = locate('%s.asm' % name)
-    if location:
+    if location := locate(f'{name}.asm'):
         input = os.path.normpath(os.path.join(location, name))
         output = os.path.normpath(os.path.join('./bin/', name))
-        p = Popen(['nasm', '-f bin', '-O3', '-o %s.bin' %
-                   output, '%s.asm' % input])
+        p = Popen(['nasm', '-f bin', '-O3', f'-o {output}.bin', f'{input}.asm'])
         p.wait()
         xmit(name)
     else:
@@ -60,7 +58,7 @@ def xmit_offset(data, name, value, match_offset=0):
         print('# %s Offset: %d' % (name, offset + match_offset))
 
 def xmit(name, dump_ruby=True):
-    bin = os.path.normpath(os.path.join('./bin/', '%s.bin' % name))
+    bin = os.path.normpath(os.path.join('./bin/', f'{name}.bin'))
     f = open(bin, 'rb')
     data = bytearray(f.read())
     print('# Name: %s\n# Length: %d bytes' % (name, len(data)))
@@ -97,35 +95,36 @@ def xmit(name, dump_ruby=True):
         xmit_dump_ruby(data)
 
 def main(argv=None):
-    if not argv:
-        argv = sys.argv
-        if len(argv) == 1:
-            print('Usage: build.py [clean|all|<name>]')
+    if argv:
+        return
+    argv = sys.argv
+    if len(argv) == 1:
+        print('Usage: build.py [clean|all|<name>]')
+    else:
+        print('# Built on %s\n' % (time.asctime(time.localtime())))
+        if argv[1] == 'clean':
+            clean()
+        elif argv[1] == 'all':
+            for root, dirs, files in os.walk('./src/egghunter/'):
+                for name in files:
+                    build(name[:-4])
+            for root, dirs, files in os.walk('./src/migrate/'):
+                for name in files:
+                    build(name[:-4])
+            for root, dirs, files in os.walk('./src/single/'):
+                for name in files:
+                    build(name[:-4])
+            for root, dirs, files in os.walk('./src/stage/'):
+                for name in files:
+                    build(name[:-4])
+            for root, dirs, files in os.walk('./src/stager/'):
+                for name in files:
+                    build(name[:-4])
+            for root, dirs, files in os.walk('./src/kernel/'):
+                for name in files:
+                    build(name[:-4])
         else:
-            print('# Built on %s\n' % (time.asctime(time.localtime())))
-            if argv[1] == 'clean':
-                clean()
-            elif argv[1] == 'all':
-                for root, dirs, files in os.walk('./src/egghunter/'):
-                    for name in files:
-                        build(name[:-4])
-                for root, dirs, files in os.walk('./src/migrate/'):
-                    for name in files:
-                        build(name[:-4])
-                for root, dirs, files in os.walk('./src/single/'):
-                    for name in files:
-                        build(name[:-4])
-                for root, dirs, files in os.walk('./src/stage/'):
-                    for name in files:
-                        build(name[:-4])
-                for root, dirs, files in os.walk('./src/stager/'):
-                    for name in files:
-                        build(name[:-4])
-                for root, dirs, files in os.walk('./src/kernel/'):
-                    for name in files:
-                        build(name[:-4])
-            else:
-                build(argv[1])
+            build(argv[1])
 
 if __name__ == '__main__':
     main()

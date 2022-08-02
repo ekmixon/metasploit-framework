@@ -29,23 +29,21 @@ kb = None
 
 class MSFHandler(BaseHTTPRequestHandler):
     def status(self):
-        status = {}
         hw_versions = []
         fw_version = pkg_resources.get_distribution("killerbee").version
         device_names = []
         for dev in kbutils.devlist():
             hw_versions.append(dev[2])
             device_names.append(dev[1])
-        if len(hw_versions) > 0:
-            status["operational"] = 1
-        else:
-            status["operational"] = 0
-        status["hw_specialty"] = { "zigbee": True }
-        # TODO: We should check firmware before reporting transmit capabilities
-        status["hw_capabilities"] = { "transmit": True}
-        status["last_10_errors"] = last_errors
-        status["api_version"] = "0.0.3"
-        status["fw_version"] = fw_version
+        status = {
+            "operational": 1 if hw_versions else 0,
+            "hw_specialty": {"zigbee": True},
+            "hw_capabilities": {"transmit": True},
+            "last_10_errors": last_errors,
+            "api_version": "0.0.3",
+            "fw_version": fw_version,
+        }
+
         if len(hw_versions) == 1:
             status["hw_version"] = hw_versions[0]
             status["device_name"] = device_names[0]
@@ -58,8 +56,7 @@ class MSFHandler(BaseHTTPRequestHandler):
 
     def statistics(self):
         global packets_sent
-        stats = {}
-        stats["uptime"] = int(time.time()) - starttime
+        stats = {"uptime": int(time.time()) - starttime}
         stats["packet_stats"] = packets_sent
         stats["last_request"] = last_sent
         stats["voltage"] = "0.0v"
@@ -72,7 +69,7 @@ class MSFHandler(BaseHTTPRequestHandler):
         return { "system_timezone": time.strftime("%Z") }
 
     def set_channel(self, args):
-        if not "chan" in args:
+        if "chan" not in args:
             return self.not_supported()
         chan = int(args["chan"][0])
         kb.set_channel(chan)
@@ -80,7 +77,7 @@ class MSFHandler(BaseHTTPRequestHandler):
 
     def inject(self, args):
         global packets_sent
-        if not "data" in args:
+        if "data" not in args:
             return self.not_supported()
         try:
             kb.inject(base64.urlsafe_b64decode(args["data"][0]))
@@ -105,9 +102,7 @@ class MSFHandler(BaseHTTPRequestHandler):
         return {"success": True }
 
     def supported_devices(self):
-        devices = []
-        for dev in kbutils.devlist():
-          devices.append(dev[0])
+        devices = [dev[0] for dev in kbutils.devlist()]
         return { "devices": devices }
 
     def not_supported(self):
@@ -128,12 +123,14 @@ class MSFHandler(BaseHTTPRequestHandler):
         self.wfile.write("Please Authenticate")
 
     def do_GET(self):
-        if not password == None:
-            if self.headers.getheader('Authorization') == None:
+        if password is not None:
+            if self.headers.getheader('Authorization') is None:
                 print("Did not authenticate")
                 self.do_AUTHHEAD()
                 return
-            if not self.headers.getheader('Authorization') == 'Basic '+base64.b64encode(username + ":" + password):
+            if self.headers.getheader(
+                'Authorization'
+            ) != 'Basic ' + base64.b64encode(f"{username}:{password}"):
                 print("Bad Authentication")
                 self.do_AUTHHEAD()
                 return
@@ -151,9 +148,8 @@ class MSFHandler(BaseHTTPRequestHandler):
             self.send(self.supported_devices())
         elif self.path.startswith("/zigbee/"):
             re_dev = re.compile("/zigbee/([\d\w:]+)/")
-            m = re_dev.match(self.path)
-            if m:
-                dev = m.group(1)
+            if m := re_dev.match(self.path):
+                dev = m[1]
                 if self.path.find("/set_channel?") > -1:
                     self.send(self.set_channel(args))
                 elif self.path.find("/inject?") > -1:

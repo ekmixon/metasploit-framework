@@ -6,9 +6,9 @@ with open('data/wordlists/joomla.txt', 'r') as j:
     old = j.read().splitlines()
 
 for com in new_com.splitlines():
-    if not 'components/%s/'%(com) in old:
-        old.append('components/%s/'%(com))
-        print('[+] Adding: components/%s/'%(com))
+    if f'components/{com}/' not in old:
+        old.append(f'components/{com}/')
+        print(f'[+] Adding: components/{com}/')
 
 old.sort()
 with open('data/wordlists/joomla.txt', 'w') as j:

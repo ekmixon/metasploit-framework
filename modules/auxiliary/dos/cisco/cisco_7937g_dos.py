@@ -60,7 +60,7 @@ def create_rand_cred(size, seq=string.ascii_uppercase + string.ascii_lowercase):
     return ''.join(random.choice(seq) for _ in range(size))
 
 def run(args):
-    module.LogHandler.setup(msg_prefix='{} - '.format(args['rhost']))
+    module.LogHandler.setup(msg_prefix=f"{args['rhost']} - ")
     if dependency1_missing:
         logging.error('Python module dependency (socket) is missing, cannot continue')
         logging.error('Please execute pip3 install socket.')

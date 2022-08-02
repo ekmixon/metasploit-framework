@@ -13,11 +13,11 @@ def eprint(*args, **kwargs):
 def log(message, level='info'):
     # logging goes to stderr
     sigil = '*'
-    if level == 'warning' or level == 'error':
+    if level in ['warning', 'error']:
         sigil = '!'
     elif level == 'good':
         sigil = '+'
-    eprint('[{}] {}'.format(sigil, message))
+    eprint(f'[{sigil}] {message}')
 
 
 def report(kind, data):
@@ -33,12 +33,14 @@ def parse(meta):
     parser = argparse.ArgumentParser(description=meta['description'])
     actions = ['run'] + meta['capabilities']
     parser.add_argument(
-            'action',
-            nargs='?',
-            metavar="ACTION",
-            help="The action to take ({})".format(actions),
-            default='run',
-            choices=actions)
+        'action',
+        nargs='?',
+        metavar="ACTION",
+        help=f"The action to take ({actions})",
+        default='run',
+        choices=actions,
+    )
+
 
     required_group = parser.add_argument_group('required arguments')
     for opt, props in meta['options'].items():
@@ -46,7 +48,7 @@ def parse(meta):
         desc = props['description']
         required = props['required'] and (props.get('default', None) is None)
         if props.get('default', None) is not None:
-            desc = "{}, (default: {})".format(props['description'], props['default'])
+            desc = f"{props['description']}, (default: {props['default']})"
 
         if required:
             group = required_group
@@ -66,7 +68,7 @@ def parse(meta):
 
 
 def choose_type(t):
-    if t == 'int' or t == 'port':
+    if t in ['int', 'port']:
         return int
     elif t == 'float':
         return float

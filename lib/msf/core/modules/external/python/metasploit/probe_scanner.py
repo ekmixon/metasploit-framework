@@ -71,7 +71,7 @@ async def probe_host(host, port, payload, connect_timeout, read_timeout):
             r, w = await asyncio.open_connection(host, port)
             remote = w.get_extra_info('peername')
             if remote[0] == host:
-                module.log('{}:{} - Connected'.format(host, port), level='debug')
+                module.log(f'{host}:{port} - Connected', level='debug')
             else:
                 module.log('{}({}):{} - Connected'.format(host, *remote), level='debug')
             w.write(payload)
@@ -81,14 +81,12 @@ async def probe_host(host, port, payload, connect_timeout, read_timeout):
             while len(buf) < 4096:
                 data = await r.read(4096)
                 if data:
-                    module.log('{}:{} - Received {} bytes'.format(host, port, len(data)), level='debug')
+                    module.log(f'{host}:{port} - Received {len(data)} bytes', level='debug')
                     buf.extend(data)
                 else:
                     break
     except asyncio.TimeoutError:
-        if buf:
-            pass
-        else:
+        if not buf:
             raise
     finally:
         try:

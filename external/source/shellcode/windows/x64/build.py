@@ -35,12 +35,10 @@ def locate(src_file, dir='./src/'):
     return None
 
 def build(name):
-    location = locate('%s.asm' % name)
-    if location:
+    if location := locate(f'{name}.asm'):
         input = os.path.normpath(os.path.join(location, name))
         output = os.path.normpath(os.path.join('./bin/', name))
-        p = Popen(['nasm', '-f bin', '-O3', '-o %s.bin' %
-                   output, '%s.asm' % input])
+        p = Popen(['nasm', '-f bin', '-O3', f'-o {output}.bin', f'{input}.asm'])
         p.wait()
         xmit(name)
     else:
@@ -62,7 +60,7 @@ def xmit_offset(data, name, value):
         print('# %s Offset: %d' % (name, offset))
 
 def xmit(name, dump_ruby=True):
-    bin = os.path.normpath(os.path.join('./bin/', '%s.bin' % name))
+    bin = os.path.normpath(os.path.join('./bin/', f'{name}.bin'))
     f = open(bin, 'rb')
     data = f.read()
     print('# Name: %s\n# Length: %d bytes' % (name, len(data)))

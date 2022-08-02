@@ -4,7 +4,7 @@ import time
 
 import metasploit.module as module
 
-OUTPUT_FILENAME = '__' + str(time.time())
+OUTPUT_FILENAME = f'__{str(time.time())}'
 
 
 def pre_run_hook(args):
@@ -30,24 +30,21 @@ class RemoteShell(object):
             self._noOutput = True
 
     def do_cd(self, s):
-        self.execute_remote('cd ' + s)
-        if len(self._outputBuffer.strip('\r\n')) > 0:
-            self._outputBuffer = ''
-        else:
+        self.execute_remote(f'cd {s}')
+        if len(self._outputBuffer.strip('\r\n')) <= 0:
             self._pwd = ntpath.normpath(ntpath.join(self._pwd, s))
             self.execute_remote('cd ')
             self._pwd = self._outputBuffer.strip('\r\n')
-            self._outputBuffer = ''
+        self._outputBuffer = ''
 
     def do_get(self, src_path):
         try:
             newPath = ntpath.normpath(ntpath.join(self._pwd, src_path))
             drive, tail = ntpath.splitdrive(newPath)
             filename = ntpath.basename(tail)
-            fh = open(filename, 'wb')
-            logging.info("Downloading %s\\%s" % (drive, tail))
-            self.__transferClient.getFile(drive[:-1]+'$', tail, fh.write)
-            fh.close()
+            with open(filename, 'wb') as fh:
+                logging.info("Downloading %s\\%s" % (drive, tail))
+                self.__transferClient.getFile(f'{drive[:-1]}$', tail, fh.write)
         except Exception as e:
             logging.error(str(e))
             if os.path.exists(filename):
@@ -64,14 +61,13 @@ class RemoteShell(object):
                 dst_path = ''
 
             src_file = os.path.basename(src_path)
-            fh = open(src_path, 'rb')
-            dst_path = string.replace(dst_path, '/', '\\')
+            with open(src_path, 'rb') as fh:
+                dst_path = string.replace(dst_path, '/', '\\')
 
-            pathname = ntpath.join(ntpath.join(self._pwd, dst_path), src_file)
-            drive, tail = ntpath.splitdrive(pathname)
-            logging.info("Uploading %s to %s" % (src_file, pathname))
-            self.__transferClient.putFile(drive[:-1]+'$', tail, fh.read)
-            fh.close()
+                pathname = ntpath.join(ntpath.join(self._pwd, dst_path), src_file)
+                drive, tail = ntpath.splitdrive(pathname)
+                logging.info(f"Uploading {src_file} to {pathname}")
+                self.__transferClient.putFile(f'{drive[:-1]}$', tail, fh.read)
         except Exception as e:
             logging.critical(str(e))
 
@@ -94,11 +90,10 @@ class RemoteShell(object):
                 self.__transferClient.getFile(self._share, self._output, output_callback)
                 break
             except Exception as e:
-                if str(e).find('STATUS_SHARING_VIOLATION') >=0:
+                if 'STATUS_SHARING_VIOLATION' in str(e):
                     # Output not finished, let's wait
                     time.sleep(1)
-                    pass
-                elif str(e).find('Broken') >= 0:
+                elif 'Broken' in str(e):
                     # The SMB Connection might have timed out, let's try reconnecting
                     logging.debug('Connection broken, trying to recreate it')
                     self.__transferClient.reconnect()

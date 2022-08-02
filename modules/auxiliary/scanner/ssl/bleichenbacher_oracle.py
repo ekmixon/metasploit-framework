@@ -143,12 +143,11 @@ def oracle(target, pms, cke_2nd_prefix, cipher_handshake=ch_def, messageflow=Fal
             alert = s.recv(4096)
             if len(alert) == 0:
                 return ("No data received from server")
-            if alert[0] == 0x15:
-                if len(alert) < 7:
-                    return ("TLS alert was truncated (%s)" % (repr(alert)))
-                return ("TLS alert %i of length %i" % (alert[6], len(alert)))
-            else:
-                return "Received something other than an alert (%s)" % (alert[0:10])
+            if alert[0] != 0x15:
+                return f"Received something other than an alert ({alert[:10]})"
+            if len(alert) < 7:
+                return f"TLS alert was truncated ({repr(alert)})"
+            return ("TLS alert %i of length %i" % (alert[6], len(alert)))
         except ConnectionResetError as e:
             return "ConnectionResetError"
         except socket.timeout:

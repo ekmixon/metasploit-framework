@@ -46,16 +46,15 @@ def valid_login(host, rport, username, password):
                                                                     "username": username,
                                                                     "password": password
                                                                 }]}
-    url = 'http://' + str(host) + ':' + str(rport) + '/ubus'
+    url = f'http://{str(host)}:{str(rport)}/ubus'
     session = requests.Session()
     try:
         request = session.post(url, json=payload)
         response = json.loads(request.text)
-        if response['result'][0] != 6 and len(response['result']) > 1:
-            ubus_rpc_session = response['result'][1]['ubus_rpc_session']
-            module.log('Ubus RPC Session: ' + ubus_rpc_session, level='good')
-        else:
+        if response['result'][0] == 6 or len(response['result']) <= 1:
             return False
+        ubus_rpc_session = response['result'][1]['ubus_rpc_session']
+        module.log(f'Ubus RPC Session: {ubus_rpc_session}', level='good')
     except requests.exceptions.ConnectionError:
         module.log("Unhandled exception: ConnectionError", level='error')
         return False
