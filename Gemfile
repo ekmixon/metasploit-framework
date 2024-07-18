@@ -38,7 +38,7 @@ group :development, :test do
   # environment is development
   gem 'rspec-rails', '>= 5.0.1'
   gem 'rspec-rerun'
-  gem 'rubocop'
+  gem 'rubocop', '>= 1.24.0'
 end
 
 group :test do
